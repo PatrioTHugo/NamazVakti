@@ -23,6 +23,10 @@ jobs:
         flutter-version: '3.19.x'
         channel: 'stable'
 
+    - name: Create Flutter Skeleton
+      run: |
+        flutter create . --org com.namazvakti.app --project-name namaz_vakti --overwrite
+
     - name: Install dependencies
       run: flutter pub get
 
@@ -30,7 +34,7 @@ jobs:
       run: flutter build apk --release
 
     - name: Upload APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: app-release-apk
         path: build/app/outputs/flutter-apk/app-release.apk
