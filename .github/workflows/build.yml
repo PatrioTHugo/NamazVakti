@@ -25,11 +25,11 @@ jobs:
         flutter-version: '3.19.x'
         channel: 'stable'
 
-    - name: Restore main.dart and create android project
-      run: |
-        cp lib/main.dart lib/main.dart.bak
-        flutter create --platforms=android .
-        cp lib/main.dart.bak lib/main.dart
+    - name: Generate Android files without overwriting
+      run: flutter create --platforms=android .
+
+    - name: Restore main.dart from git
+      run: git checkout lib/main.dart
 
     - name: Install dependencies
       run: flutter pub get
