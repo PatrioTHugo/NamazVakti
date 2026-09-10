@@ -2,40 +2,80 @@ import 'package:flutter/material.dart';
 import 'package:adhan/adhan.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
-import 'dart me:async';
+import 'dart:async';
 
 void main() {
   runApp(const NamazApp());
 }
 
-class NamazApp extends StatelessWidget {
+class NamazApp extends StatefulWidget {
   const NamazApp({super.key});
 
   @override
+  State<NamazApp> createState() => _NamazAppState();
+}
+
+class _NamazAppState extends State<NamazApp> {
+  ThemeMode _themeMode = ThemeMode.dark;
+
+  void _toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Şəkildəki xüsusi palitra rəngləri
+    const darkBg = Color(0xFF052A3D);
+    const darkCard = Color(0xFF117192);
+    const accentCyan = Color(0xFF19D1E6);
+    const lightBg = Color(0xFFB3CDD7);
+    const accentBrown = Color(0xFF614943);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Namaz Vaxtı',
+      themeMode: _themeMode,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F172A),
-        colorSchemeSeed: const Color(0xFF10B981),
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: lightBg,
+        colorSchemeSeed: accentBrown,
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.black87,
+        ),
       ),
-      home: const HomePage(),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: darkBg,
+        colorSchemeSeed: accentCyan,
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.white,
+        ),
+      ),
+      home: HomePage(onToggleTheme: _toggleTheme, currentMode: _themeMode),
     );
   }
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final VoidCallback onToggleTheme;
+  final ThemeMode currentMode;
+
+  const HomePage({super.key, required this.onToggleTheme, required this.currentMode});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  Coordinates _coordinates = Coordinates(40.4093, 49.8671); // Baku / Sumqayit default
+  Coordinates _coordinates = Coordinates(40.4093, 49.8671); // Baku / Sumqayit
   String _locationName = "Bakı / Sumqayıt";
   late PrayerTimes _prayerTimes;
   Timer? _timer;
@@ -61,16 +101,12 @@ class _HomePageState extends State<HomePage> {
     final now = DateTime.now();
     final next = _prayerTimes.nextPrayer();
     DateTime? nextTime = _prayerTimes.timeForPrayer(next);
-    
+
     if (next == Prayer.none || nextTime == null) {
       final tomorrow = now.add(const Duration(days: 1));
       final params = CalculationMethod.muslim_world_league.getParameters();
       params.madhab = Madhab.hanafi;
-      final tomorrowPrayerTimes = PrayerTimes(
-        _coordinates,
-        DateComponents.from(tomorrow),
-        params,
-      );
+      final tomorrowPrayerTimes = PrayerTimes(_coordinates, DateComponents.from(tomorrow), params);
       nextTime = tomorrowPrayerTimes.fajr;
       _nextPrayerName = "Sübh";
     } else {
@@ -128,6 +164,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = widget.currentMode == ThemeMode.dark;
     final timeFormat = DateFormat('HH:mm');
     final hours = _timeDifference.inHours.toString().padLeft(2, '0');
     final minutes = (_timeDifference.inMinutes % 60).toString().padLeft(2, '0');
@@ -135,20 +172,22 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         title: Row(
           children: [
-            const Icon(Icons.location_on, color: Color(0xFF10B981)),
-            const SizedBox(width: 8),
-            Text(_locationName, style: const TextStyle(fontSize: 18, color: Colors.white)),
+            const AppLogo(size: 32),
+            const SizedBox(width: 10),
+            Text(_locationName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.my_location, color: Colors.white),
+            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+            onPressed: widget.onToggleTheme,
+          ),
+          IconButton(
+            icon: const Icon(Icons.my_location),
             onPressed: _determinePosition,
-          )
+          ),
         ],
       ),
       body: Padding(
@@ -159,12 +198,15 @@ class _HomePageState extends State<HomePage> {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF059669), Color(0xFF10B981)],
+                gradient: LinearGradient(
+                  colors: isDark 
+                      ? [const Color(0xFF117192), const Color(0xFF19D1E6)] 
+                      : [const Color(0xFF614943), const Color(0xFF8D6E63)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4))],
               ),
               child: Column(
                 children: [
@@ -189,12 +231,12 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: ListView(
                 children: [
-                  _buildTimeTile("Sübh", timeFormat.format(_prayerTimes.fajr)),
-                  _buildTimeTile("Günəş", timeFormat.format(_prayerTimes.sunrise)),
-                  _buildTimeTile("Zöhr", timeFormat.format(_prayerTimes.dhuhr)),
-                  _buildTimeTile("Əsr", timeFormat.format(_prayerTimes.asr)),
-                  _buildTimeTile("Məğrib", timeFormat.format(_prayerTimes.maghrib)),
-                  _buildTimeTile("İşa", timeFormat.format(_prayerTimes.isha)),
+                  _buildTimeTile("Sübh", timeFormat.format(_prayerTimes.fajr), isDark),
+                  _buildTimeTile("Günəş", timeFormat.format(_prayerTimes.sunrise), isDark),
+                  _buildTimeTile("Zöhr", timeFormat.format(_prayerTimes.dhuhr), isDark),
+                  _buildTimeTile("Əsr", timeFormat.format(_prayerTimes.asr), isDark),
+                  _buildTimeTile("Məğrib", timeFormat.format(_prayerTimes.maghrib), isDark),
+                  _buildTimeTile("İşa", timeFormat.format(_prayerTimes.isha), isDark),
                 ],
               ),
             ),
@@ -204,17 +246,54 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTimeTile(String title, String time) {
+  Widget _buildTimeTile(String title, String time, bool isDark) {
     return Card(
-      color: const Color(0xFF1E293B),
+      color: isDark ? const Color(0xFF117192).withOpacity(0.4) : Colors.white.withOpacity(0.8),
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+        title: Text(
+          title, 
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87, 
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         trailing: Text(
           time,
-          style: const TextStyle(color: Color(0xFF10B981), fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: isDark ? const Color(0xFF19D1E6) : const Color(0xFF614943), 
+            fontSize: 18, 
+            fontWeight: FontWeight.bold,
+          ),
         ),
+      ),
+    );
+  }
+}
+
+// Xüsusi Məscid vı Hilal Loqosu
+class AppLogo extends StatelessWidget {
+  final double size;
+  const AppLogo({super.key, this.size = 40});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [Color(0xFF19D1E6), Color(0xFF117192)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Icon(
+        Icons.mosque,
+        color: Colors.white,
+        size: size * 0.6,
       ),
     );
   }
