@@ -26,7 +26,6 @@ class _NamazAppState extends State<NamazApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Şəkildəki xüsusi palitra rəngləri
     const darkBg = Color(0xFF052A3D);
     const darkCard = Color(0xFF117192);
     const accentCyan = Color(0xFF19D1E6);
@@ -75,7 +74,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Coordinates _coordinates = Coordinates(40.4093, 49.8671); // Baku / Sumqayit
+  Coordinates _coordinates = Coordinates(40.4093, 49.8671);
   String _locationName = "Bakı / Sumqayıt";
   late PrayerTimes _prayerTimes;
   Timer? _timer;
@@ -272,7 +271,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// Xüsusi Məscid vı Hilal Loqosu
 class AppLogo extends StatelessWidget {
   final double size;
   const AppLogo({super.key, this.size = 40});
