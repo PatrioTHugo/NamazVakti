@@ -22,22 +22,15 @@ jobs:
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.x'
         channel: 'stable'
 
-    - name: Generate Android files without overwriting
-      run: flutter create --platforms=android .
-
-    - name: Restore main.dart from git
-      run: git checkout lib/main.dart
-
-    - name: Install dependencies
+    - name: Get Flutter packages
       run: flutter pub get
 
     - name: Build APK
       run: flutter build apk --release
 
-    - name: Upload APK artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: NamazVakti-release-apk
